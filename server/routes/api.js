@@ -19,28 +19,46 @@ router.post('/new', function (req, res) {
     res.end()
 })
 
-router.put('/update')
+router.put('/update/:group1/:group2', function(req, res){
+    let {group1,group2} = req.body
+    Expense.findOneAndUpdate({group: group1}, {group: group2}, {new: true}, function(err,expense){
+        res.send(expense)
+    })
+})
 
-router.get('/expenses/:group/:total?', function (req, res) {
-    const { group, total } = req.params
+router.get('/expenses/:group1/:total?', function (req, res) {
+    const { group1, total } = req.params
     if (total == "true") {
-        Expense.aggregate([{
-            $group: {
-                group: "$group",
-                cost: {
-                    $count: "$amount"
-                }
-            }
-        }],
+        Expense.aggregate([
+            {$match: {group: group1}},
+            {$group: {_id: group1, total: {$sum: "$amount"}}}
+        ],
             function (err, expenses) {
                 res.send(expenses)
             })
     }
-    Expense.find({ group: group }, function (err, expenses) {
+    else { 
+        Expense.find({ group: group }, function (err, expenses) {
+            res.send(expenses)
+
+        })
+    }
+})
+
+router.get('/expenses/:d1/:d2', function(req,res){
+    const {d1,d2 }= req.params
+    if(!d1){
+        res.redirect("/expenses")
+    }
+    else if(!d2){
+        d2 = moment().format('LLLL')
+    }
+    Expense.find({$and:[ {data: {$gt:d1}},
+    {data:{$lt:d2}}]}, function(err,expenses){
         res.send(expenses)
     })
-
 })
+
 
 
 
